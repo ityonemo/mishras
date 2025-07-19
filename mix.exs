@@ -9,7 +9,23 @@ defmodule Mishras.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
-      consolidate_protocols: Mix.env() != :test
+      consolidate_protocols: Mix.env() != :test,
+      package: [
+        description: "Factory Library for Ecto schemas",
+        licenses: ["MIT"],
+        files: ~w(lib mix.exs README* LICENSE*),
+        links: %{
+          "GitHub" => "https://github.com/ityonemo/mishras",
+          "Mishras" => "https://hexdocs.pm/mishras"
+        }
+      ],
+      docs: docs()
+    ]
+  end
+
+  defp docs do
+    [
+      main: "Mishras.Factory"
     ]
   end
 
@@ -28,7 +44,8 @@ defmodule Mishras.MixProject do
     [
       {:ecto, "~> 3.0"},
       {:protoss, "> 0.0.0", runtime: false},
-      {:mox, "> 0.0.0", only: :test}
+      {:mox, "> 0.0.0", only: :test},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 end

@@ -66,11 +66,12 @@ end
 ### Creating Test Data
 
 ```elixir
+alias Mishras.Factory
 # Build a struct (no database insertion)
-user = Mishras.Factory.build(MyApp.User, %{name: "Jane"})
+user = Factory.build(MyApp.User, %{name: "Jane"})
 
 # Insert into database
-user = Mishras.Factory.insert(MyApp.User, %{email: "jane@example.com"})
+user = Factory.insert(MyApp.User, %{email: "jane@example.com"})
 ```
 
 ### Advanced Features

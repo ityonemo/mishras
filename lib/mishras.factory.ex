@@ -31,25 +31,25 @@ defprotocol Mishras.Factory do
         end
       end
 
-  ## Modes
+  ### Modes
 
-  The factory supports two modes:
+  The factory supports two modes, which are passed into the `build_map` callback:
   - `:build` - Creates structs without database insertion
   - `:insert` - Creates and inserts records into the database
 
+  ### Dependent data
+
+  When building maps, it may be necessary to have some fields depend on other fields.
+  In this case, the fields are passed as the second `attrs` argument.
+
   ## Configuration
 
-  Configure your repo in your application config:
+  In order to properly integrate with Ecto, configure your repo in your application config:
 
       config :mishras, repo: MyApp.Repo
   """
 
-  @doc """
-  Creates a changeset for the given object with the provided attributes.
-
-  This function is automatically delegated to the schema's changeset function
-  when using the `use Mishras` macro in your factory implementation.
-  """
+  @doc false
   def changeset(object, attrs)
 after
   alias Ecto.Changeset

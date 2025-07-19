@@ -21,12 +21,6 @@ defmodule Mishras do
 
   This will automatically create a `changeset/2` function that delegates
   to `MyApp.User.changeset/2`.
-
-  ## Requirements
-
-  This module can only be used within factory implementations that follow
-  the naming convention `Mishras.Factory.SchemaName` where `SchemaName`
-  is the actual schema module name.
   """
 
   @doc """
