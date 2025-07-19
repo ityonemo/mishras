@@ -71,7 +71,6 @@ defmodule Mishras.BelongsToTest do
                Factory.build(BelongsToSchema, parent: %{field: "baz"})
     end
 
-
     test "can be inserted with an existing struct" do
       parent = Factory.build(ParentSchema, %{other_field: "boop"})
 

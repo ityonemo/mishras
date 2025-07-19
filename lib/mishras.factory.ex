@@ -52,7 +52,7 @@ after
     |> add_primary_key(mode, schema, impl)
     |> then(&Map.merge(impl.build_map(mode, &1), &1))
     |> expand_associations(mode, schema)
-    |> expand_embeds(mode, schema)
+    |> expand_embeds(schema)
   end
 
   defp expand_associations(attrs, mode, schema) do
@@ -101,21 +101,34 @@ after
     end
   end
 
-  defp expand_embeds(attrs, mode, schema) do
+  defp expand_embeds(attrs, schema) do
     :embeds
     |> schema.__schema__()
-    |> Enum.reduce(attrs, &expand_embed(&2, &1, mode, schema))
+    |> Enum.reduce(attrs, &expand_embed(&2, &1, schema))
   end
 
-  defp expand_embed(attrs, embed, mode, schema) do
-    case {attrs, schema.__schema__(:embed, embed)} |> dbg(limit: 25) do
+  defp expand_embed(attrs, embed, schema) do
+    case {attrs, schema.__schema__(:embed, embed)} do
       {%{^embed => %embed_mod{} = object}, %{cardinality: :one, related: embed_mod}} ->
-        Map.replace!(attrs, embed, Changeset.apply_changes(object))
+        Map.replace!(attrs, embed, embed_mod.changeset(object, %{}))
 
       {%{^embed => embed_map}, %{cardinality: :one, related: embed_mod}} ->
         Map.replace!(attrs, embed, build(embed_mod, embed_map))
 
-      {attrs, _} -> attrs
+      {%{^embed => object_list}, %{cardinality: :many, related: embed_mod}}
+      when is_list(object_list) ->
+        object_list
+        |> Enum.map(fn
+          object when is_struct(object, embed_mod) ->
+            embed_mod.changeset(object, %{})
+
+          object when is_map(object) ->
+            build(embed_mod, object)
+        end)
+        |> then(&Map.replace!(attrs, embed, &1))
+
+      {attrs, _} ->
+        attrs
     end
   end
 end

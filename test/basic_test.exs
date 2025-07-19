@@ -52,6 +52,7 @@ defmodule Mishras.BasicSchemaTest do
         refute Changeset.get_field(changeset, :id)
         Changeset.apply_action!(changeset, :insert)
       end)
+
       :ok
     end
 

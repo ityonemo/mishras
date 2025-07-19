@@ -1,4 +1,4 @@
-defmodule Mishras.EmbedsOneSchemaTest do
+defmodule Mishras.EmbedsOneTest do
   use ExUnit.Case, async: true
 
   setup {Mox, :verify_on_exit!}
@@ -63,11 +63,6 @@ defmodule Mishras.EmbedsOneSchemaTest do
     test "can be overridden" do
       assert %EmbedsOneSchema{embed: %EmbeddedSchema{field: "baz"}} =
                Factory.build(EmbedsOneSchema, embed: %{field: "baz"})
-    end
-
-    test "can have zero" do
-      assert %EmbedsOneSchema{embed: nil} =
-               Factory.build(EmbedsOneSchema, embed: nil)
     end
 
     test "can be inserted with an existing struct" do

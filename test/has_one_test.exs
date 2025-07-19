@@ -63,7 +63,7 @@ defmodule Mishras.HasOneTest do
     test "can be overridden internally" do
       assert %HasOneSchema{child: %ChildSchema{field: "baz"}} =
                Factory.build(HasOneSchema, child: %{field: "baz"})
-    end 
+    end
 
     test "can be inserted with an existing struct" do
       child = Factory.build(ChildSchema, %{})
