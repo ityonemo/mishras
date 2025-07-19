@@ -1,6 +1,55 @@
 use Protoss
 
 defprotocol Mishras.Factory do
+  @moduledoc """
+  A protocol for creating test data factories for Ecto schemas.
+
+  This protocol provides a powerful and flexible way to create test data with
+  automatic handling of associations, embeds, and primary key generation.
+
+  ## Overview
+
+  The Mishras.Factory protocol allows you to define factories for your Ecto schemas
+  that can automatically:
+  - Generate primary keys (both integer and binary_id)
+  - Handle associations (belongs_to, has_one, has_many, many_to_many)
+  - Process embedded schemas (embeds_one, embeds_many)
+  - Support different modes for building vs inserting data
+
+  ## Implementation
+
+  To implement a factory for a schema, you need to define the `build_map/2` callback:
+
+      defimpl Mishras.Factory, for: MyApp.User do
+        use Mishras
+        
+        def build_map(_mode, _attrs) do
+          %{
+            name: "John Doe",
+            email: "john@example.com"
+          }
+        end
+      end
+
+  ## Modes
+
+  The factory supports two modes:
+  - `:build` - Creates structs without database insertion
+  - `:insert` - Creates and inserts records into the database
+
+  ## Configuration
+
+  Configure your repo in your application config:
+
+      config :mishras, repo: MyApp.Repo
+  """
+
+  @doc """
+  Creates a changeset for the given object with the provided attributes.
+
+  This function is automatically delegated to the schema's changeset function
+  when using the `use Mishras` macro in your factory implementation.
+  """
   def changeset(object, attrs)
 after
   alias Ecto.Changeset
@@ -10,6 +59,26 @@ after
   @callback autogenerate_id(attrs :: map) :: map
   @optional_callbacks autogenerate_id: 1
 
+  @doc """
+  Builds a struct from the given schema with the provided attributes.
+
+  This function creates a struct without inserting it into the database.
+  It automatically generates primary keys and handles associations/embeds.
+
+  ## Parameters
+
+  - `schema` - The Ecto schema module
+  - `attrs` - A map or keyword list of attributes to override defaults
+
+  ## Examples
+
+      user = Mishras.Factory.build(MyApp.User, %{name: "Jane"})
+      # Returns a %MyApp.User{} struct
+
+  ## Returns
+
+  A struct of the given schema type with all fields populated.
+  """
   def build(schema, attrs \\ []) do
     schema
     |> struct()
@@ -37,6 +106,30 @@ after
 
   @repo Application.compile_env!(:mishras, :repo)
 
+  @doc """
+  Inserts a record into the database using the given schema and attributes.
+
+  This function creates a struct and immediately inserts it into the configured
+  repository. It automatically generates primary keys and handles associations/embeds.
+
+  ## Parameters
+
+  - `schema` - The Ecto schema module
+  - `attrs` - A map or keyword list of attributes to override defaults
+
+  ## Examples
+
+      user = Mishras.Factory.insert(MyApp.User, %{email: "jane@example.com"})
+      # Returns a persisted %MyApp.User{} struct with database ID
+
+  ## Returns
+
+  A struct of the given schema type that has been persisted to the database.
+
+  ## Raises
+
+  Raises if the insertion fails due to validation errors or database constraints.
+  """
   def insert(schema, attrs \\ []) do
     schema
     |> struct()
