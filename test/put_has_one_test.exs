@@ -1,4 +1,4 @@
-defmodule Mishras.HasOneTest do
+defmodule Mishras.PutHasOneTest do
   use ExUnit.Case, async: true
 
   setup {Mox, :verify_on_exit!}
@@ -34,7 +34,14 @@ defmodule Mishras.HasOneTest do
     def changeset(struct \\ %__MODULE__{}, attrs) do
       struct
       |> Changeset.cast(attrs, [:id])
-      |> Changeset.put_assoc(:child, attrs[:child])
+      |> maybe_put_assoc(:child, attrs)
+    end
+
+    defp maybe_put_assoc(changeset, key, attrs) do
+      case Map.get(attrs, key) do
+        nil -> changeset
+        value -> Changeset.put_assoc(changeset, key, value)
+      end
     end
   end
 
@@ -52,9 +59,11 @@ defmodule Mishras.HasOneTest do
     def build_map(_mode, _attrs) do
       %{child: %{}}
     end
+
+    def relation_type(_relation), do: :put
   end
 
-  describe "has one schema changeset" do
+  describe "put has one schema build" do
     test "is provided with sane defaults" do
       assert %HasOneSchema{child: %ChildSchema{field: "foobar"}} =
                Factory.build(HasOneSchema, %{})
@@ -65,7 +74,7 @@ defmodule Mishras.HasOneTest do
                Factory.build(HasOneSchema, child: %{field: "baz"})
     end
 
-    test "can be inserted with an existing struct" do
+    test "can be built with an existing struct" do
       child = Factory.build(ChildSchema, %{})
 
       assert %HasOneSchema{child: ^child} =
@@ -73,7 +82,7 @@ defmodule Mishras.HasOneTest do
     end
   end
 
-  describe "has one schema insert" do
+  describe "put has one schema insert" do
     test "is provided with sane defaults" do
       Mox.expect(Repo, :insert!, fn changeset, _ ->
         refute Changeset.get_field(changeset, :id)
@@ -82,6 +91,16 @@ defmodule Mishras.HasOneTest do
 
       assert %HasOneSchema{child: %ChildSchema{field: "foobar"}} =
                Factory.insert(HasOneSchema, %{})
+    end
+
+    test "can be overridden with a map" do
+      Mox.expect(Repo, :insert!, fn changeset, _ ->
+        refute Changeset.get_field(changeset, :id)
+        Changeset.apply_action!(changeset, :insert)
+      end)
+
+      assert %HasOneSchema{child: %ChildSchema{field: "baz"}} =
+               Factory.insert(HasOneSchema, child: %{field: "baz"})
     end
 
     test "can be inserted with an existing struct" do

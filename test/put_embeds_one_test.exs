@@ -1,4 +1,4 @@
-defmodule Mishras.EmbedsOneTest do
+defmodule Mishras.PutEmbedsOneTest do
   use ExUnit.Case, async: true
 
   setup {Mox, :verify_on_exit!}
@@ -34,7 +34,14 @@ defmodule Mishras.EmbedsOneTest do
     def changeset(struct \\ %__MODULE__{}, attrs) do
       struct
       |> Changeset.cast(attrs, [:id])
-      |> Changeset.put_embed(:embed, attrs[:embed])
+      |> maybe_put_embed(:embed, attrs)
+    end
+
+    defp maybe_put_embed(changeset, key, attrs) do
+      case Map.get(attrs, key) do
+        nil -> changeset
+        value -> Changeset.put_embed(changeset, key, value)
+      end
     end
   end
 
@@ -52,9 +59,11 @@ defmodule Mishras.EmbedsOneTest do
     def build_map(_mode, _attrs) do
       %{embed: %{}}
     end
+
+    def relation_type(_relation), do: :put
   end
 
-  describe "embeds one schema build" do
+  describe "put embeds one schema build" do
     test "is provided with sane defaults" do
       assert %EmbedsOneSchema{embed: %EmbeddedSchema{field: "foobar"}} =
                Factory.build(EmbedsOneSchema, %{})
@@ -65,7 +74,7 @@ defmodule Mishras.EmbedsOneTest do
                Factory.build(EmbedsOneSchema, embed: %{field: "baz"})
     end
 
-    test "can be inserted with an existing struct" do
+    test "can be built with an existing struct" do
       child = Factory.build(EmbeddedSchema, %{})
 
       assert %EmbedsOneSchema{embed: ^child} =
@@ -73,7 +82,7 @@ defmodule Mishras.EmbedsOneTest do
     end
   end
 
-  describe "has many schema insert" do
+  describe "put embeds one schema insert" do
     test "is provided with sane defaults" do
       Mox.expect(Repo, :insert!, fn changeset, _ ->
         refute Changeset.get_field(changeset, :id)
@@ -82,6 +91,16 @@ defmodule Mishras.EmbedsOneTest do
 
       assert %EmbedsOneSchema{embed: %EmbeddedSchema{field: "foobar"}} =
                Factory.insert(EmbedsOneSchema, %{})
+    end
+
+    test "can be overridden with a map" do
+      Mox.expect(Repo, :insert!, fn changeset, _ ->
+        refute Changeset.get_field(changeset, :id)
+        Changeset.apply_action!(changeset, :insert)
+      end)
+
+      assert %EmbedsOneSchema{embed: %EmbeddedSchema{field: "baz"}} =
+               Factory.insert(EmbedsOneSchema, embed: %{field: "baz"})
     end
 
     test "can be inserted with an existing struct" do

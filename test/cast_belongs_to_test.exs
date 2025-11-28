@@ -1,4 +1,4 @@
-defmodule Mishras.BelongsToTest do
+defmodule Mishras.CastBelongsToTest do
   use ExUnit.Case, async: true
 
   setup {Mox, :verify_on_exit!}
@@ -59,7 +59,7 @@ defmodule Mishras.BelongsToTest do
     end
   end
 
-  describe "belongs to schema build" do
+  describe "cast belongs to schema build" do
     test "is provided with sane defaults" do
       assert %BelongsToSchema{parent: %ParentSchema{field: "foobar"}} =
                Factory.build(BelongsToSchema, %{})
@@ -71,7 +71,7 @@ defmodule Mishras.BelongsToTest do
                Factory.build(BelongsToSchema, parent: %{field: "baz"})
     end
 
-    test "can be inserted with an existing struct" do
+    test "can be built with an existing struct" do
       parent = Factory.build(ParentSchema, %{other_field: "boop"})
 
       assert %BelongsToSchema{parent: ^parent} =
@@ -86,7 +86,7 @@ defmodule Mishras.BelongsToTest do
     end
   end
 
-  describe "belongs to schema insert" do
+  describe "cast belongs to schema insert" do
     test "is provided with sane defaults" do
       Mox.expect(Repo, :insert!, fn changeset, _ ->
         refute Changeset.get_field(changeset, :id)
@@ -95,6 +95,16 @@ defmodule Mishras.BelongsToTest do
 
       assert %BelongsToSchema{parent: %ParentSchema{field: "foobar"}} =
                Factory.insert(BelongsToSchema, %{})
+    end
+
+    test "can be overridden with a map" do
+      Mox.expect(Repo, :insert!, fn changeset, _ ->
+        refute Changeset.get_field(changeset, :id)
+        Changeset.apply_action!(changeset, :insert)
+      end)
+
+      assert %BelongsToSchema{parent: %ParentSchema{field: "baz", other_field: "barbaz"}} =
+               Factory.insert(BelongsToSchema, parent: %{field: "baz"})
     end
 
     test "can be inserted with an existing struct" do

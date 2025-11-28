@@ -1,4 +1,4 @@
-defmodule Mishras.ManyToManySchemaTest do
+defmodule Mishras.PutManyToManyTest do
   use ExUnit.Case, async: true
 
   setup {Mox, :verify_on_exit!}
@@ -34,7 +34,14 @@ defmodule Mishras.ManyToManySchemaTest do
     def changeset(struct \\ %__MODULE__{}, attrs) do
       struct
       |> Changeset.cast(attrs, [:id])
-      |> Changeset.put_assoc(:others, attrs[:others])
+      |> maybe_put_assoc(:others, attrs)
+    end
+
+    defp maybe_put_assoc(changeset, key, attrs) do
+      case Map.get(attrs, key) do
+        nil -> changeset
+        value -> Changeset.put_assoc(changeset, key, value)
+      end
     end
   end
 
@@ -52,9 +59,11 @@ defmodule Mishras.ManyToManySchemaTest do
     def build_map(_mode, _attrs) do
       %{others: [%{}]}
     end
+
+    def relation_type(_relation), do: :put
   end
 
-  describe "many to many schema build" do
+  describe "put many to many schema build" do
     test "is provided with sane defaults" do
       assert %ManyToManySchema{others: [%OtherSchema{field: "foobar"}]} =
                Factory.build(ManyToManySchema, %{})
@@ -69,7 +78,7 @@ defmodule Mishras.ManyToManySchemaTest do
       assert %ManyToManySchema{others: []} = Factory.build(ManyToManySchema, others: [])
     end
 
-    test "can be inserted with an existing struct" do
+    test "can be built with an existing struct" do
       other = Factory.build(OtherSchema, %{})
 
       assert %ManyToManySchema{others: [^other]} =
@@ -77,7 +86,7 @@ defmodule Mishras.ManyToManySchemaTest do
     end
   end
 
-  describe "many to many schema insert" do
+  describe "put many to many schema insert" do
     test "is provided with sane defaults" do
       Mox.expect(Repo, :insert!, fn changeset, _ ->
         refute Changeset.get_field(changeset, :id)
@@ -86,6 +95,26 @@ defmodule Mishras.ManyToManySchemaTest do
 
       assert %ManyToManySchema{others: [%OtherSchema{field: "foobar"}]} =
                Factory.insert(ManyToManySchema, %{})
+    end
+
+    test "can be overridden with a map" do
+      Mox.expect(Repo, :insert!, fn changeset, _ ->
+        refute Changeset.get_field(changeset, :id)
+        Changeset.apply_action!(changeset, :insert)
+      end)
+
+      assert %ManyToManySchema{others: [%OtherSchema{field: "baz"}]} =
+               Factory.insert(ManyToManySchema, others: [%{field: "baz"}])
+    end
+
+    test "can have zero" do
+      Mox.expect(Repo, :insert!, fn changeset, _ ->
+        refute Changeset.get_field(changeset, :id)
+        Changeset.apply_action!(changeset, :insert)
+      end)
+
+      assert %ManyToManySchema{others: []} =
+               Factory.insert(ManyToManySchema, others: [])
     end
 
     test "can be inserted with an existing struct" do

@@ -1,4 +1,4 @@
-defmodule Mishras.EmbedsManyTest do
+defmodule Mishras.PutEmbedsManyTest do
   use ExUnit.Case, async: true
 
   setup {Mox, :verify_on_exit!}
@@ -34,7 +34,14 @@ defmodule Mishras.EmbedsManyTest do
     def changeset(struct \\ %__MODULE__{}, attrs) do
       struct
       |> Changeset.cast(attrs, [:id])
-      |> Changeset.put_embed(:embed, attrs[:embed])
+      |> maybe_put_embed(:embed, attrs)
+    end
+
+    defp maybe_put_embed(changeset, key, attrs) do
+      case Map.get(attrs, key) do
+        nil -> changeset
+        value -> Changeset.put_embed(changeset, key, value)
+      end
     end
   end
 
@@ -52,9 +59,11 @@ defmodule Mishras.EmbedsManyTest do
     def build_map(_mode, _attrs) do
       %{embed: [%{}]}
     end
+
+    def relation_type(_relation), do: :put
   end
 
-  describe "embeds many schema build" do
+  describe "put embeds many schema build" do
     test "is provided with sane defaults" do
       assert %EmbedsManySchema{embed: [%EmbeddedSchema{field: "foobar"}]} =
                Factory.build(EmbedsManySchema, %{})
@@ -70,7 +79,7 @@ defmodule Mishras.EmbedsManyTest do
                Factory.build(EmbedsManySchema, embed: [])
     end
 
-    test "can be inserted with an existing struct" do
+    test "can be built with an existing struct" do
       child = Factory.build(EmbeddedSchema, %{})
 
       assert %EmbedsManySchema{embed: [^child]} =
@@ -78,7 +87,7 @@ defmodule Mishras.EmbedsManyTest do
     end
   end
 
-  describe "has many schema insert" do
+  describe "put embeds many schema insert" do
     test "is provided with sane defaults" do
       Mox.expect(Repo, :insert!, fn changeset, _ ->
         refute Changeset.get_field(changeset, :id)
@@ -87,6 +96,26 @@ defmodule Mishras.EmbedsManyTest do
 
       assert %EmbedsManySchema{embed: [%EmbeddedSchema{field: "foobar"}]} =
                Factory.insert(EmbedsManySchema, %{})
+    end
+
+    test "can be overridden with a map" do
+      Mox.expect(Repo, :insert!, fn changeset, _ ->
+        refute Changeset.get_field(changeset, :id)
+        Changeset.apply_action!(changeset, :insert)
+      end)
+
+      assert %EmbedsManySchema{embed: [%EmbeddedSchema{field: "baz"}]} =
+               Factory.insert(EmbedsManySchema, embed: [%{field: "baz"}])
+    end
+
+    test "can have zero" do
+      Mox.expect(Repo, :insert!, fn changeset, _ ->
+        refute Changeset.get_field(changeset, :id)
+        Changeset.apply_action!(changeset, :insert)
+      end)
+
+      assert %EmbedsManySchema{embed: []} =
+               Factory.insert(EmbedsManySchema, embed: [])
     end
 
     test "can be inserted with an existing struct" do

@@ -13,7 +13,7 @@ defmodule Mishras do
 
       defimpl Mishras.Factory, for: MyApp.User do
         use Mishras
-        
+
         def build_map(_mode, _attrs) do
           %{name: "John Doe", email: "john@example.com"}
         end
@@ -21,6 +21,9 @@ defmodule Mishras do
 
   This will automatically create a `changeset/2` function that delegates
   to `MyApp.User.changeset/2`.
+
+  See `Mishras.Factory` for documentation on optional callbacks like
+  `autogenerate_id/1`, `insert/2`, and `relation_type/1`.
   """
 
   @doc """
