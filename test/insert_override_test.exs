@@ -26,7 +26,7 @@ defmodule Mishras.InsertOverrideTest do
       %{field: "foobar"}
     end
 
-    def insert(_schema, attrs) do
+    def insert(attrs) do
       %InsertOverrideSchema{
         field: attrs[:field] || "custom",
         custom_inserted: true
