@@ -58,12 +58,13 @@ defprotocol Mishras.Factory do
         Map.put(attrs, :id, MyApp.IdGenerator.generate())
       end
 
-  ### `insert/2`
+  ### `insert/1`
 
-  Override the default insert behavior for custom persistence logic:
+  Override the default insert behavior for custom persistence logic. The attrs
+  passed to this callback have already been processed by `build_map/2`:
 
-      def insert(schema, attrs) do
-        schema
+      def insert(attrs) do
+        @for
         |> struct()
         |> changeset(attrs)
         |> MyApp.Repo.insert!(returning: true)
@@ -173,7 +174,6 @@ after
 
   ## Parameters
 
-  - `schema` - The schema module being inserted
   - `attrs` - The attributes map produced by `build_map/2` merged with caller overrides
 
   ## Returns
@@ -182,14 +182,14 @@ after
 
   ## Examples
 
-      def insert(schema, attrs) do
-        schema
+      def insert(attrs) do
+        @for
         |> struct()
         |> changeset(attrs)
         |> MyApp.Repo.insert!(returning: true, on_conflict: :replace_all)
       end
   """
-  @callback insert(schema :: module, attrs :: map) :: struct
+  @callback insert(attrs :: map) :: struct
 
   @doc """
   Specifies how a relation should be handled when building data.
@@ -218,7 +218,7 @@ after
   """
   @callback relation_type(relation :: atom) :: relation_type
 
-  @optional_callbacks autogenerate_id: 1, insert: 2, relation_type: 1
+  @optional_callbacks autogenerate_id: 1, insert: 1, relation_type: 1
 
   @doc """
   Builds a struct from the given schema with the provided attributes.
@@ -293,13 +293,14 @@ after
   """
   def insert(schema, attrs \\ []) do
     impl = Module.concat(Mishras.Factory, schema)
+    attrs = build_map(schema, :insert, attrs)
 
-    if function_exported?(impl, :insert, 2) do
-      impl.insert(schema, Map.new(attrs))
+    if function_exported?(impl, :insert, 1) do
+      impl.insert(attrs)
     else
       schema
       |> struct()
-      |> changeset(build_map(schema, :insert, attrs))
+      |> changeset(attrs)
       |> then(&apply(@repo, :insert!, [&1, []]))
     end
   end
